@@ -1,0 +1,182 @@
+You are analyzing a single page from a financial, medical, scientific, or business PDF document.
+
+Your task is to identify EVERY distinct table visible on this page and describe only the table structure.
+
+A "table" is any structured grid of rows and columns, whether or not borders are visible.
+
+-----------------------
+TABLE IDENTIFICATION RULES
+-----------------------
+
+Identify ALL separate tables on the page.
+
+Treat them as DIFFERENT tables when ANY of the following are true:
+
+1. They have different titles or captions.
+
+2. They are separated by normal paragraph text, figures, images, charts, notes, or large whitespace.
+
+3. The column structure changes significantly (different number of columns or different column meanings).
+
+4. A new header row appears that is not simply a repeated header from the previous page.
+
+5. One table clearly ends (total row, closing border, footnote, etc.) before another begins.
+
+DO NOT split a table simply because:
+
+- the header is repeated after a page break
+- there is a small amount of whitespace
+- section labels appear inside the same column structure
+- row groups are separated by blank rows but share the same column layout
+
+If unsure whether two regions belong to one table or two tables, prefer ONE table unless there is clear structural evidence of separation.
+
+-----------------------
+TABLE TITLE
+-----------------------
+
+For each table, estimate the table title using:
+
+1. A caption immediately above the table
+2. A numbered table title (e.g. "Table 4")
+3. A bold heading directly above the table
+4. If no title exists, provide a short descriptive name.
+
+-----------------------
+HEADER ROWS
+-----------------------
+
+Count how many rows belong to the table header before actual data begins.
+
+Header rows usually contain:
+
+- column names
+- grouped column labels
+- measurement units
+- merged cells
+- repeated category labels
+
+Do NOT count the table title as a header row.
+
+Examples:
+
+Single header:
+
+Category | Amount
+
+header_rows = 1
+
+Grouped header:
+
+            Revenue
+Year   Product A Product B
+
+header_rows = 2
+
+-----------------------
+MULTI-ROW HEADERS
+-----------------------
+
+Set has_multi_row_headers = true ONLY when ROW LABELS (typically the leftmost column) contain hierarchical or nested structure.
+
+Examples include:
+
+Assets
+   Current assets
+      Cash
+      Inventory
+   Non-current assets
+
+OR
+
+(a)
+(b)
+(i)
+(ii)
+
+OR
+
+Parent category
+    Child category
+
+OR
+
+Indented row labels representing hierarchy.
+
+Set FALSE when the left column is simply a flat list of independent rows.
+
+Do NOT confuse grouped ROW labels with grouped COLUMN headers.
+
+-----------------------
+MULTI-COLUMN HEADERS
+-----------------------
+
+Set has_multi_column_headers = true when COLUMN headers occupy more than one header row or contain spanning/grouped labels.
+
+Examples:
+
+                2023
+        Q1   Q2   Q3   Q4
+
+OR
+
+          Male      Female
+Age      Count %   Count %
+
+OR
+
+A merged header spanning several subcolumns.
+
+Set FALSE when each column has only one independent header row.
+
+-----------------------
+CONTINUES NEXT PAGE
+-----------------------
+
+Set continues_next_page = true when the table appears incomplete because:
+
+- it reaches the bottom of the page
+- no closing rows or totals are visible
+- the last visible row appears truncated
+- the table obviously continues beyond the page boundary
+
+Set FALSE when the table visibly ends on this page.
+
+-----------------------
+FINAL CHECK BEFORE OUTPUT
+-----------------------
+
+Before finalizing your answer, re-count your tables. Financial and insurance revenue account documents are almost always ONE single table with many row-group sections (e.g. "Income from Investments", "Other Income", "TOTAL (A)") — these are NOT separate tables, they are row groups within one table sharing the same columns.
+
+If you have identified more than 2-3 tables on this page, you have very likely made an error by treating row-group section labels as table boundaries. Re-examine and merge any such incorrectly split tables before outputting your final answer.
+
+-----------------------
+IMPORTANT
+-----------------------
+
+Do NOT extract:
+
+- numbers
+- text inside cells
+- row values
+- column values
+
+Only describe the table structure.
+
+Return ONLY valid JSON in exactly this schema:
+
+{
+  "page": <int>,
+  "table_count": <int>,
+  "multiple_tables": <bool>,
+  "tables": [
+    {
+      "table_id": <int>,
+      "table_name": "<string>",
+      "header_rows": <int>,
+      "has_multi_row_headers": <bool>,
+      "has_multi_column_headers": <bool>,
+      "continues_next_page": <bool>
+    }
+  ]
+}
